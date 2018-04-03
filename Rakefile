@@ -10,6 +10,10 @@ directory 'xtensa-esp32-elf' do
   sh "wget -O - #{ESP32_TOOLCHAIN_URL} | tar zxf -"
 end
 
-task test: %w(mruby xtensa-esp32-elf)
+directory 'esp-idf' do
+  sh 'git clone --recursive --depth=1 https://github.com/espressif/esp-idf.git'
+end
+
+task test: %w(mruby xtensa-esp32-elf esp-idf)
 
 task default: :test
