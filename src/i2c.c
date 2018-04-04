@@ -5,6 +5,7 @@
 #include <mruby/value.h>
 #include <driver/gpio.h>
 #include <driver/i2c.h>
+#include <esp_err.h>
 
 /* https://github.com/espressif/esp-idf/blob/595ddfd8250426f2e76f7c47ffe9697eb13c455a/examples/peripherals/i2c/main/i2c_example_main.c#L65 */
 #define MRUBY_ESP32_I2C_DEFAULT_SLAVE_ADDR 0x28
@@ -16,9 +17,49 @@
 #define MRUBY_ESP32_I2C_DEFAULT_SCL GPIO_NUM_22
 
 /*
+ * ESP32::I2C
+ */
+typedef struct mrb_esp32_i2c {
+  i2c_port_t i2c_num;
+} mrb_esp32_i2c;
+
+static const struct mrb_data_type mrb_esp32_i2c_type = {
+  "mrb_esp32_i2c", mrb_free
+};
+
+/* #driver_install */
+static mrb_value mrb_esp32_i2c_install(mrb_state *mrb, mrb_value self) {
+  mrb_esp32_i2c *esp32_i2c = (esp32_i2c *)DATA_PTR(self);
+  esp_err_t ret;
+  mrb_int i2c_num, mode, slv_rx_buf_len, slv_tx_buf_len, intr_alloc_flags;
+
+
+  mrb_get_args(mrb, "iiiii", &i2c_num, &mode, &slv_rx_buf_len, &slv_tx_buf_len, &intr_alloc_flags);
+  i2c_driver_install((i2c_port_t)i2c_num, (i2c_mode_t)mode, (size_t)slv_rx_buf_len, (size_t)slv_tx_buf_len, (int)intr_alloc_flags);
+
+}
+
+/* #initialize */
+static mrb_value mrb_esp32_i2c_init(mrb_state *mrb, mrb_value self) {
+  mrb_esp32_i2c *mrb_esp32_i2c;
+  /* avoid memory leaks */
+  mrb_esp32_i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  if (mrb_esp32_i2c) {
+    mrb_free(mrb, mrb_esp32_i2c);
+  }
+  mrb_data_init(self, NULL, &mrb_esp32_i2c_type);
+
+  /* create i2c_config_t */
+  mrb_esp32_i2c = (mrb_esp32_i2c *)mrb_malloc(mrb, sizeof(mrb_esp32_i2c));
+  mrb_data_init(self, mrb_esp32_i2c, &mrb_esp32_i2c_type);
+
+  return self;
+}
+
+/*
  * ESP32::I2C::Config
  */
-static const struct mrb_data_type mrb_i2c_config_type = {
+static const struct mrb_data_type mrb_esp32_i2c_config_type = {
   "i2c_config_t", mrb_free
 };
 
@@ -65,7 +106,7 @@ static mrb_value mrb_esp32_i2c_config_init(mrb_state *mrb, mrb_value self) {
   if (i2c_config) {
     mrb_free(mrb, i2c_config);
   }
-  mrb_data_init(self, NULL, &mrb_i2c_config_type);
+  mrb_data_init(self, NULL, &mrb_esp32_i2c_config_type);
 
   /* create i2c_config_t */
   i2c_config = (i2c_config_t *)mrb_malloc(mrb, sizeof(i2c_config_t));
@@ -83,7 +124,7 @@ static mrb_value mrb_esp32_i2c_config_init(mrb_state *mrb, mrb_value self) {
     i2c_config->slave.slave_addr = option_to_mrb_int(mrb, opt, "slave_addr", MRUBY_ESP32_I2C_DEFAULT_SLAVE_ADDR);
   }
 
-  mrb_data_init(self, i2c_config, &mrb_i2c_config_type);
+  mrb_data_init(self, i2c_config, &mrb_esp32_i2c_config_type);
 
   return self;
 }
@@ -97,8 +138,26 @@ void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
   /* ESP32 */
   mrb_esp32 = mrb_define_module(mrb, "ESP32");
 
+  /* esp_err_t */
+  mrb_define_const(mrb, mrb_esp32, "OK", ESP_OK);
+  mrb_define_const(mrb, mrb_esp32, "FAIL", ESP_FAIL);
+  mrb_define_const(mrb, mrb_esp32, "ERR_NO_MEM", ESP_ERR_NO_MEM);
+  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_ARG", ESP_ERR_INVALID_ARG);
+  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_STATE", ESP_ERR_INVALID_STATE);
+  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_SIZE", ESP_ERR_INVALID_SIZE);
+  mrb_define_const(mrb, mrb_esp32, "ERR_NOT_FOUND", ESP_ERR_NOT_FOUND);
+  mrb_define_const(mrb, mrb_esp32, "ERR_NOT_SUPPORTED", ESP_ERR_NOT_SUPPORTED);
+  mrb_define_const(mrb, mrb_esp32, "ERR_TIMEOUT", ESP_ERR_TIMEOUT);
+  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_RESPONSE", ESP_ERR_INVALID_RESPONSE);
+  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_CRC", ESP_ERR_INVALID_CRC);
+  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_VERSION", ESP_ERR_INVALID_VERSION);
+  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_MAC", ESP_ERR_INVALID_MAC);
+  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_BASE", ESP_ERR_INVALID_BASE);
+
   /* ESP32::I2C */
   mrb_esp32_i2c = mrb_define_class_under(mrb, mrb_esp32, "I2C", mrb->object_class);
+  MRB_SET_INSTANCE_TT(mrb_esp32_i2c, MRB_TT_DATA);
+  mrb_define_method(mrb, mrb_esp32_i2c, "initialize", mrb_esp32_i2c_init, MRB_ARGS(5));
 
   /* ESP32::I2C::Config */
   mrb_esp32_i2c_config = mrb_define_class_under(mrb, mrb_esp32_i2c, "Config", mrb-> object_class);
