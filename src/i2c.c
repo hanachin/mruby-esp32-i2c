@@ -26,8 +26,18 @@ typedef struct mrb_esp32_i2c {
   int intr_alloc_flags;
 } mrb_esp32_i2c;
 
+typedef struct mrb_esp32_i2c_isr_arg {
+  mrb_state *mrb;
+  mrb_value block;
+  intr_handle_t intr_handle;
+} mrb_esp32_i2c_isr_arg;
+
 static const struct mrb_data_type mrb_esp32_i2c_type = {
   "mrb_esp32_i2c", mrb_free
+};
+
+static const struct mrb_data_type mrb_esp32_i2c_intr_handle_type = {
+  "i2c_intr_handle_t", mrb_free
 };
 
 static const struct mrb_data_type mrb_esp32_i2c_config_type = {
@@ -257,6 +267,64 @@ static mrb_value mrb_esp32_i2c_master_cmd_begin(mrb_state *mrb, mrb_value self) 
   return mrb_fixnum_value(i2c_master_cmd_begin(i2c->i2c_num, *cmd_handle, (TickType_t)ticks_to_wait));
 }
 
+static void mrb_esp32_i2c_isr_handler(void* arg) {
+  mrb_esp32_i2c_isr_arg *a = (mrb_esp32_i2c_isr_arg *)arg;
+  mrb_funcall(a->mrb, a->block, "call", 0);
+}
+
+/* #isr_register */
+static mrb_value mrb_esp32_i2c_isr_register(mrb_state *mrb, mrb_value self) {
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  mrb_value block, ary, intr_handle;
+  mrb_esp32_i2c_isr_arg *arg;
+  int intr_alloc_flags;
+  esp_err_t ret;
+  struct RClass *mrb_esp32, *mrb_esp32_i2c, *mrb_esp32_i2c_intr_handle;
+
+  mrb_get_args(mrb, "i&", &intr_alloc_flags, &block);
+
+  arg = (mrb_esp32_i2c_isr_arg *)mrb_malloc(mrb, sizeof(mrb_esp32_i2c_isr_arg));
+  arg->mrb = mrb;
+  arg->block = block;
+
+  ret = i2c_isr_register(i2c->i2c_num, mrb_esp32_i2c_isr_handler, arg, intr_alloc_flags, &arg->intr_handle);
+
+  if (ret == ESP_OK) {
+    mrb_gc_register(mrb, block);
+
+    mrb_esp32 = mrb_define_module(mrb, "ESP32");
+    mrb_esp32_i2c = mrb_define_class_under(mrb, mrb_esp32, "I2C", mrb->object_class);
+    mrb_esp32_i2c_intr_handle = mrb_define_class_under(mrb, mrb_esp32_i2c, "IntrHandle", mrb->object_class);
+
+    intr_handle = mrb_obj_new(mrb, mrb_esp32_i2c_intr_handle, 0, NULL);
+    mrb_data_init(intr_handle, arg, &mrb_esp32_i2c_intr_handle_type);
+
+    ary = mrb_ary_new_capa(mrb, 2);
+    mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
+    mrb_ary_set(mrb, ary, 1, intr_handle);
+  } else {
+    ary = mrb_ary_new_capa(mrb, 2);
+    mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
+    mrb_ary_set(mrb, ary, 1, mrb_nil_value());
+  }
+
+  return ary;
+}
+
+/*
+ * ESP32::I2C::IntrHandle
+ */
+
+static mrb_value mrb_esp32_i2c_intr_handle_free(mrb_state *mrb, mrb_value self) {
+  mrb_esp32_i2c_isr_arg *arg;
+  esp_err_t ret;
+  arg = (mrb_esp32_i2c_isr_arg *)DATA_PTR(self);
+  ret = i2c_isr_free(arg->intr_handle);
+  mrb_gc_unregister(mrb, arg->block);
+  mrb_data_init(self, NULL, &mrb_esp32_i2c_intr_handle_type);
+  return mrb_fixnum_value((mrb_int)ret);
+}
+
 /*
  * ESP32::I2C::Config
  */
@@ -419,7 +487,7 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_stop(mrb_state *mrb, mrb_value 
  * mruby-esp32-i2c
  */
 void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
-  struct RClass *mrb_esp32, *mrb_esp32_i2c, *mrb_esp32_i2c_config, *mrb_esp32_i2c_cmd_handle, *mrb_esp32_gpio;
+  struct RClass *mrb_esp32, *mrb_esp32_i2c, *mrb_esp32_intr, *mrb_i2c_intr_handle, *mrb_esp32_i2c_config, *mrb_esp32_i2c_cmd_handle, *mrb_esp32_gpio;
 
   /* ESP32 */
   mrb_esp32 = mrb_define_module(mrb, "ESP32");
@@ -466,6 +534,30 @@ void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
   mrb_define_method(mrb, mrb_esp32_i2c, "set_data_mode", mrb_esp32_i2c_set_data_mode, MRB_ARGS_REQ(2));
   mrb_define_method(mrb, mrb_esp32_i2c, "get_data_mode", mrb_esp32_i2c_get_data_mode, MRB_ARGS_NONE());
   mrb_define_method(mrb, mrb_esp32_i2c, "master_cmd_begin", mrb_esp32_i2c_master_cmd_begin, MRB_ARGS_REQ(2));
+  mrb_define_method(mrb, mrb_esp32_i2c, "isr_register", mrb_esp32_i2c_isr_register, MRB_ARGS_REQ(1) | MRB_ARGS_BLOCK());
+
+  /* ESP32::I2C::IntrHandle */
+  mrb_i2c_intr_handle = mrb_define_class_under(mrb, mrb_esp32_i2c, "IntrHandle", mrb->object_class);
+  mrb_define_method(mrb, mrb_i2c_intr_handle, "free", mrb_esp32_i2c_intr_handle_free, MRB_ARGS_NONE());
+
+  /* ESP32::Intr */
+  mrb_esp32_intr = mrb_define_class_under(mrb, mrb_esp32, "Intr", mrb->object_class);
+
+  /* esp_intr_alloc.h */
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_LEVEL1", mrb_fixnum_value(ESP_INTR_FLAG_LEVEL1));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_LEVEL2", mrb_fixnum_value(ESP_INTR_FLAG_LEVEL2));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_LEVEL3", mrb_fixnum_value(ESP_INTR_FLAG_LEVEL3));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_LEVEL4", mrb_fixnum_value(ESP_INTR_FLAG_LEVEL4));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_LEVEL5", mrb_fixnum_value(ESP_INTR_FLAG_LEVEL5));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_LEVEL6", mrb_fixnum_value(ESP_INTR_FLAG_LEVEL6));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_NMI", mrb_fixnum_value(ESP_INTR_FLAG_NMI));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_SHARED", mrb_fixnum_value(ESP_INTR_FLAG_SHARED));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_EDGE", mrb_fixnum_value(ESP_INTR_FLAG_EDGE));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_IRAM", mrb_fixnum_value(ESP_INTR_FLAG_IRAM));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_INTRDISABLED", mrb_fixnum_value(ESP_INTR_FLAG_INTRDISABLED));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_LOWMED", mrb_fixnum_value(ESP_INTR_FLAG_LOWMED));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_HIGH", mrb_fixnum_value(ESP_INTR_FLAG_HIGH));
+  mrb_define_const(mrb, mrb_esp32_intr, "FLAG_LEVELMASK", mrb_fixnum_value(ESP_INTR_FLAG_LEVELMASK));
 
   /* ESP32::I2C::Config */
   mrb_esp32_i2c_config = mrb_define_class_under(mrb, mrb_esp32_i2c, "Config", mrb-> object_class);
