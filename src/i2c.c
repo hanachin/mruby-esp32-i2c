@@ -238,6 +238,16 @@ static mrb_value mrb_esp32_i2c_get_data_mode(mrb_state *mrb, mrb_value self) {
   return ary;
 }
 
+/* #master_cmd_begin */
+static mrb_value mrb_esp32_i2c_master_cmd_begin(mrb_state *mrb, mrb_value self) {
+  mrb_value cmd;
+  mrb_int ticks_to_wait;
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  mrb_get_args(mrb, "oi", &cmd, &ticks_to_wait);
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(cmd);
+  return mrb_fixnum_value(i2c_master_cmd_begin(i2c->i2c_num, *cmd_handle, (TickType_t)ticks_to_wait));
+}
+
 /*
  * ESP32::I2C::Config
  */
@@ -312,10 +322,103 @@ static mrb_value mrb_esp32_i2c_config_init(mrb_state *mrb, mrb_value self) {
 }
 
 /*
+ * ESP32::I2C::CmdHandle
+ */
+static const struct mrb_data_type mrb_esp32_i2c_cmd_handle_type = {
+  "i2c_cmd_handle_t", mrb_free
+};
+
+static mrb_value mrb_esp32_i2c_cmd_handle_init(mrb_state *mrb, mrb_value self) {
+  i2c_cmd_handle_t *i2c_cmd_handle;
+
+  /* avoid memory leaks */
+  i2c_cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  if (i2c_cmd_handle) {
+    mrb_free(mrb, i2c_cmd_handle);
+  }
+  mrb_data_init(self, NULL, &mrb_esp32_i2c_cmd_handle_type);
+
+  /* create i2c_cmd_handle_t */
+  i2c_cmd_handle = (i2c_cmd_handle_t *)mrb_malloc(mrb, sizeof(i2c_cmd_handle_t));
+  *i2c_cmd_handle = i2c_cmd_link_create();
+  mrb_data_init(self, i2c_cmd_handle, &mrb_esp32_i2c_cmd_handle_type);
+
+  return self;
+}
+
+/* #delete */
+static mrb_value mrb_esp32_i2c_cmd_handle_delete(mrb_state *mrb, mrb_value self) {
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  i2c_cmd_link_delete(*cmd_handle);
+  return mrb_nil_value();
+}
+
+/* #master_start */
+static mrb_value mrb_esp32_i2c_cmd_handle_master_start(mrb_state *mrb, mrb_value self) {
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  return mrb_fixnum_value((mrb_int)i2c_master_start(*cmd_handle));
+}
+
+/* #master_write_byte */
+static mrb_value mrb_esp32_i2c_cmd_handle_master_write_byte(mrb_state *mrb, mrb_value self) {
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  mrb_value s;
+  mrb_bool ack_en;
+  mrb_get_args(mrb, "Sb", &s, &ack_en);
+  return mrb_fixnum_value((mrb_int)i2c_master_write_byte(*cmd_handle, (uint8_t)RSTRING_PTR(s)[0], (bool)ack_en));
+}
+
+/* #master_write */
+static mrb_value mrb_esp32_i2c_cmd_handle_master_write(mrb_state *mrb, mrb_value self) {
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  char *data;
+  mrb_int data_len;
+  mrb_bool ack_en;
+  mrb_get_args(mrb, "sb", &data, &data_len, &ack_en);
+  return mrb_fixnum_value((mrb_int)i2c_master_write(*cmd_handle, (uint8_t *)data, (size_t)data_len, (bool)ack_en));
+}
+
+/* #master_read_byte */
+static mrb_value mrb_esp32_i2c_cmd_handle_master_read_byte(mrb_state *mrb, mrb_value self) {
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  mrb_value ary, s;
+  mrb_bool ack_en;
+  esp_err_t ret;
+  mrb_get_args(mrb, "b", &ack_en);
+  s = mrb_str_new(mrb, NULL, 1);
+  ret = i2c_master_read_byte(*cmd_handle, RSTRING_PTR(s), (bool)ack_en);
+  ary = mrb_ary_new_capa(mrb, 2);
+  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
+  mrb_ary_set(mrb, ary, 1, s);
+  return ary;
+}
+
+/* #master_read */
+static mrb_value mrb_esp32_i2c_cmd_handle_master_read(mrb_state *mrb, mrb_value self) {
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  mrb_value ary, s;
+  esp_err_t ret;
+  mrb_int data_len;
+  mrb_bool ack_en;
+  mrb_get_args(mrb, "ib", &data_len, &ack_en);
+  s = mrb_str_new(mrb, NULL, data_len);
+  ret = i2c_master_read(*cmd_handle, (uint8_t *)RSTRING_PTR(s), (size_t)data_len, (bool)ack_en);
+  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
+  mrb_ary_set(mrb, ary, 1, s);
+  return ary;
+}
+
+/* #master_stop */
+static mrb_value mrb_esp32_i2c_cmd_handle_master_stop(mrb_state *mrb, mrb_value self) {
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  return mrb_fixnum_value((mrb_int)i2c_master_stop(*cmd_handle));
+}
+
+/*
  * mruby-esp32-i2c
  */
 void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
-  struct RClass *mrb_esp32, *mrb_esp32_i2c, *mrb_esp32_i2c_config, *mrb_esp32_gpio;
+  struct RClass *mrb_esp32, *mrb_esp32_i2c, *mrb_esp32_i2c_config, *mrb_esp32_i2c_cmd_handle, *mrb_esp32_gpio;
 
   /* ESP32 */
   mrb_esp32 = mrb_define_module(mrb, "ESP32");
@@ -361,6 +464,7 @@ void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
   mrb_define_method(mrb, mrb_esp32_i2c, "get_timeout", mrb_esp32_i2c_get_timeout, MRB_ARGS_NONE());
   mrb_define_method(mrb, mrb_esp32_i2c, "set_data_mode", mrb_esp32_i2c_set_data_mode, MRB_ARGS_REQ(2));
   mrb_define_method(mrb, mrb_esp32_i2c, "get_data_mode", mrb_esp32_i2c_get_data_mode, MRB_ARGS_NONE());
+  mrb_define_method(mrb, mrb_esp32_i2c, "master_cmd_begin", mrb_esp32_i2c_master_cmd_begin, MRB_ARGS_REQ(2));
 
   /* ESP32::I2C::Config */
   mrb_esp32_i2c_config = mrb_define_class_under(mrb, mrb_esp32_i2c, "Config", mrb-> object_class);
@@ -409,6 +513,18 @@ void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
   mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_FREQ", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_FREQ));
   mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_SDA", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_SDA));
   mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_SCL", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_SCL));
+
+  /* ESP32::I2C::CmdHandle */
+  mrb_esp32_i2c_cmd_handle = mrb_define_class_under(mrb, mrb_esp32_i2c, "CmdHandle", mrb-> object_class);
+  MRB_SET_INSTANCE_TT(mrb_esp32_i2c_cmd_handle, MRB_TT_DATA);
+  mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "initialize", mrb_esp32_i2c_cmd_handle_init, MRB_ARGS_NONE());
+  mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "delete", mrb_esp32_i2c_cmd_handle_delete, MRB_ARGS_NONE());
+  mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "master_start", mrb_esp32_i2c_cmd_handle_master_start, MRB_ARGS_NONE());
+  mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "master_write_byte", mrb_esp32_i2c_cmd_handle_master_write_byte, MRB_ARGS_REQ(2));
+  mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "master_write", mrb_esp32_i2c_cmd_handle_master_write, MRB_ARGS_REQ(2));
+  mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "master_read_byte", mrb_esp32_i2c_cmd_handle_master_read_byte, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "master_read", mrb_esp32_i2c_cmd_handle_master_read, MRB_ARGS_REQ(2));
+  mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "master_stop", mrb_esp32_i2c_cmd_handle_master_stop, MRB_ARGS_NONE());
 
   /* TODO move to mruby-esp32-gpio */
   /* ESP32::GPIO */
