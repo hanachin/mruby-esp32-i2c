@@ -18,9 +18,6 @@
 #define MRUBY_ESP32_I2C_DEFAULT_SDA GPIO_NUM_21
 #define MRUBY_ESP32_I2C_DEFAULT_SCL GPIO_NUM_22
 
-/*
- * ESP32::I2C
- */
 typedef struct mrb_esp32_i2c {
   i2c_port_t i2c_num;
   i2c_mode_t mode;
@@ -32,6 +29,18 @@ typedef struct mrb_esp32_i2c {
 static const struct mrb_data_type mrb_esp32_i2c_type = {
   "mrb_esp32_i2c", mrb_free
 };
+
+static const struct mrb_data_type mrb_esp32_i2c_config_type = {
+  "i2c_config_t", mrb_free
+};
+
+static const struct mrb_data_type mrb_esp32_i2c_cmd_handle_type = {
+  "i2c_cmd_handle_t", mrb_free
+};
+
+/*
+ * ESP32::I2C
+ */
 
 /* #initialize */
 static mrb_value mrb_esp32_i2c_init(mrb_state *mrb, mrb_value self) {
@@ -251,10 +260,6 @@ static mrb_value mrb_esp32_i2c_master_cmd_begin(mrb_state *mrb, mrb_value self) 
 /*
  * ESP32::I2C::Config
  */
-static const struct mrb_data_type mrb_esp32_i2c_config_type = {
-  "i2c_config_t", mrb_free
-};
-
 static i2c_mode_t option_to_i2c_mode_t(mrb_state *mrb, mrb_value opt, const char *key, i2c_mode_t def) {
   mrb_value mode = mrb_hash_fetch(mrb, opt, mrb_symbol_value(mrb_intern_cstr(mrb, key)), mrb_fixnum_value(def));
   mrb_assert(mrb_fixnum_p(mode));
@@ -324,10 +329,6 @@ static mrb_value mrb_esp32_i2c_config_init(mrb_state *mrb, mrb_value self) {
 /*
  * ESP32::I2C::CmdHandle
  */
-static const struct mrb_data_type mrb_esp32_i2c_cmd_handle_type = {
-  "i2c_cmd_handle_t", mrb_free
-};
-
 static mrb_value mrb_esp32_i2c_cmd_handle_init(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *i2c_cmd_handle;
 
