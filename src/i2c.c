@@ -487,27 +487,10 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_stop(mrb_state *mrb, mrb_value 
  * mruby-esp32-i2c
  */
 void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
-  struct RClass *mrb_esp32, *mrb_esp32_i2c, *mrb_esp32_intr, *mrb_i2c_intr_handle, *mrb_esp32_i2c_config, *mrb_esp32_i2c_cmd_handle, *mrb_esp32_gpio;
+  struct RClass *mrb_esp32, *mrb_esp32_i2c, *mrb_esp32_intr, *mrb_i2c_intr_handle, *mrb_esp32_i2c_config, *mrb_esp32_i2c_cmd_handle;
 
   /* ESP32 */
   mrb_esp32 = mrb_define_module(mrb, "ESP32");
-
-  /* TODO move to mruby-esp32 */
-  /* esp_err_t */
-  mrb_define_const(mrb, mrb_esp32, "OK", mrb_fixnum_value(ESP_OK));
-  mrb_define_const(mrb, mrb_esp32, "FAIL", mrb_fixnum_value(ESP_FAIL));
-  mrb_define_const(mrb, mrb_esp32, "ERR_NO_MEM", mrb_fixnum_value(ESP_ERR_NO_MEM));
-  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_ARG", mrb_fixnum_value(ESP_ERR_INVALID_ARG));
-  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_STATE", mrb_fixnum_value(ESP_ERR_INVALID_STATE));
-  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_SIZE", mrb_fixnum_value(ESP_ERR_INVALID_SIZE));
-  mrb_define_const(mrb, mrb_esp32, "ERR_NOT_FOUND", mrb_fixnum_value(ESP_ERR_NOT_FOUND));
-  mrb_define_const(mrb, mrb_esp32, "ERR_NOT_SUPPORTED", mrb_fixnum_value(ESP_ERR_NOT_SUPPORTED));
-  mrb_define_const(mrb, mrb_esp32, "ERR_TIMEOUT", mrb_fixnum_value(ESP_ERR_TIMEOUT));
-  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_RESPONSE", mrb_fixnum_value(ESP_ERR_INVALID_RESPONSE));
-  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_CRC", mrb_fixnum_value(ESP_ERR_INVALID_CRC));
-  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_VERSION", mrb_fixnum_value(ESP_ERR_INVALID_VERSION));
-  mrb_define_const(mrb, mrb_esp32, "ERR_INVALID_MAC", mrb_fixnum_value(ESP_ERR_INVALID_MAC));
-  mrb_define_const(mrb, mrb_esp32, "ERR_WIFI_BASE", mrb_fixnum_value(ESP_ERR_WIFI_BASE));
 
   /* ESP32::I2C */
   mrb_esp32_i2c = mrb_define_class_under(mrb, mrb_esp32, "I2C", mrb->object_class);
@@ -618,50 +601,6 @@ void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
   mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "master_read_byte", mrb_esp32_i2c_cmd_handle_master_read_byte, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "master_read", mrb_esp32_i2c_cmd_handle_master_read, MRB_ARGS_REQ(2));
   mrb_define_method(mrb, mrb_esp32_i2c_cmd_handle, "master_stop", mrb_esp32_i2c_cmd_handle_master_stop, MRB_ARGS_NONE());
-
-  /* TODO move to mruby-esp32-gpio */
-  /* ESP32::GPIO */
-  mrb_esp32_gpio = mrb_define_class_under(mrb, mrb_esp32, "GPIO", mrb->object_class);
-
-  /* gpio_num_t */
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_0", mrb_fixnum_value(GPIO_NUM_0));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_1", mrb_fixnum_value(GPIO_NUM_1));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_2", mrb_fixnum_value(GPIO_NUM_2));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_3", mrb_fixnum_value(GPIO_NUM_3));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_4", mrb_fixnum_value(GPIO_NUM_4));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_5", mrb_fixnum_value(GPIO_NUM_5));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_6", mrb_fixnum_value(GPIO_NUM_6));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_7", mrb_fixnum_value(GPIO_NUM_7));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_8", mrb_fixnum_value(GPIO_NUM_8));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_9", mrb_fixnum_value(GPIO_NUM_9));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_10", mrb_fixnum_value(GPIO_NUM_10));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_11", mrb_fixnum_value(GPIO_NUM_11));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_12", mrb_fixnum_value(GPIO_NUM_12));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_13", mrb_fixnum_value(GPIO_NUM_13));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_14", mrb_fixnum_value(GPIO_NUM_14));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_15", mrb_fixnum_value(GPIO_NUM_15));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_16", mrb_fixnum_value(GPIO_NUM_16));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_17", mrb_fixnum_value(GPIO_NUM_17));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_18", mrb_fixnum_value(GPIO_NUM_18));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_19", mrb_fixnum_value(GPIO_NUM_19));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_21", mrb_fixnum_value(GPIO_NUM_21));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_22", mrb_fixnum_value(GPIO_NUM_22));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_23", mrb_fixnum_value(GPIO_NUM_23));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_25", mrb_fixnum_value(GPIO_NUM_25));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_26", mrb_fixnum_value(GPIO_NUM_26));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_27", mrb_fixnum_value(GPIO_NUM_27));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_32", mrb_fixnum_value(GPIO_NUM_32));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_33", mrb_fixnum_value(GPIO_NUM_33));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_34", mrb_fixnum_value(GPIO_NUM_34));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_35", mrb_fixnum_value(GPIO_NUM_35));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_36", mrb_fixnum_value(GPIO_NUM_36));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_37", mrb_fixnum_value(GPIO_NUM_37));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_38", mrb_fixnum_value(GPIO_NUM_38));
-  mrb_define_const(mrb, mrb_esp32_gpio, "NUM_39", mrb_fixnum_value(GPIO_NUM_39));
-
-  /* gpio_pullup_t */
-  mrb_define_const(mrb, mrb_esp32_gpio, "PULLUP_DISABLE", mrb_fixnum_value(GPIO_PULLUP_DISABLE));
-  mrb_define_const(mrb, mrb_esp32_gpio, "PULLUP_ENABLE", mrb_fixnum_value(GPIO_PULLUP_ENABLE));
 }
 
 void mrb_esp32_i2c_gem_final(mrb_state* mrb) {
