@@ -52,7 +52,11 @@ static const struct mrb_data_type mrb_esp32_i2c_cmd_handle_type = {
  * ESP32::I2C
  */
 
-/* #initialize */
+/*
+ * initialize ESP32::I2C
+ *
+ *     i2c = ESP32::I2C.new(ESP32::I2C::NUM_0, ESP32::I2C::MODE_MASTER, 0, 0, 0)
+ */
 static mrb_value mrb_esp32_i2c_init(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c;
   mrb_int i2c_num, mode, slv_rx_buf_len, slv_tx_buf_len, intr_alloc_flags;
@@ -80,20 +84,32 @@ static mrb_value mrb_esp32_i2c_init(mrb_state *mrb, mrb_value self) {
   return self;
 }
 
-/* #driver_install */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv218i2c_driver_install10i2c_port_t10i2c_mode_t6size_t6size_ti i2c_driver_install}
+ *
+ *     i2c.driver_install
+ */
 static mrb_value mrb_esp32_i2c_driver_install(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   return mrb_fixnum_value((mrb_int)i2c_driver_install(i2c->i2c_num, i2c->mode, i2c->slv_rx_buf_len, i2c->slv_tx_buf_len, i2c->intr_alloc_flags));
 }
 
-/* #driver_delete */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv217i2c_driver_delete10i2c_port_t i2c_driver_delete}
+ *
+ *     i2c.driver_delete
+ */
 static mrb_value mrb_esp32_i2c_driver_delete(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   return mrb_fixnum_value((mrb_int)i2c_driver_delete(i2c->i2c_num));
 }
 
-/* #param_config */
-
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv216i2c_param_config10i2c_port_tPK12i2c_config_t i2c_param_config}
+ *
+ *     conf = ESP32::I2C::Config.new
+ *     i2c.param_config(conf)
+ */
 static mrb_value mrb_esp32_i2c_param_config(mrb_state *mrb, mrb_value self) {
   mrb_value i2c_config;
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
@@ -103,19 +119,35 @@ static mrb_value mrb_esp32_i2c_param_config(mrb_state *mrb, mrb_value self) {
   return mrb_fixnum_value((mrb_int)i2c_param_config(i2c->i2c_num, i2c_conf));
 }
 
-/* #reset_tx_fifo */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv217i2c_reset_tx_fifo10i2c_port_t i2c_reset_tx_fifo}
+ *
+ *     i2c.reset_tx_fifo
+ */
 static mrb_value mrb_esp32_i2c_reset_tx_fifo(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   return mrb_fixnum_value((mrb_int)i2c_reset_tx_fifo(i2c->i2c_num));
 }
 
-/* #reset_rx_fifo */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv217i2c_reset_rx_fifo10i2c_port_t i2c_reset_rx_fifo}
+ *
+ *     i2c.reset_rx_fifo
+ */
 static mrb_value mrb_esp32_i2c_reset_rx_fifo(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   return mrb_fixnum_value((mrb_int)i2c_reset_rx_fifo(i2c->i2c_num));
 }
 
-/* #set_pin */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv211i2c_set_pin10i2c_port_tii13gpio_pullup_t13gpio_pullup_t10i2c_mode_t i2c_set_pin}
+ *
+ *   # Add hanachin/mruby-esp32-gpio to conf.gem to use ESP32::GPIO
+ *   sda_io_num = ESP32::GPIO::NUM_0
+ *   scl_io_num = ESP32::GPIO::NUM_1
+ *   sda_pullup_en = scl_pullup_en = ESP32::GPIO::PULLUP_ENABLE
+ *   i2c.set_pin(sda_io_num, scl_io_num, sda_pullup_en, scl_pullup_en, ESP32::I2C::MODE_MASTER)
+ */
 static mrb_value mrb_esp32_i2c_set_pin(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int sda_io_num, scl_io_num, sda_pullup_en, scl_pullup_en, mode;
@@ -123,7 +155,13 @@ static mrb_value mrb_esp32_i2c_set_pin(mrb_state *mrb, mrb_value self) {
   return mrb_fixnum_value((mrb_int)i2c_set_pin(i2c->i2c_num, (gpio_num_t)sda_io_num, (gpio_num_t)scl_io_num, (gpio_pullup_t)sda_pullup_en, (gpio_pullup_t)scl_pullup_en, (i2c_mode_t)mode));
 }
 
-/* #slave_write_buffer */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv222i2c_slave_write_buffer10i2c_port_tP7uint8_ti10TickType_t i2c_slave_write_buffer}
+ *
+ *     ticks_to_wait = 1234
+ *     i2c.slave_write_buffer("hi", 1234)
+ *
+*/
 static mrb_value mrb_esp32_i2c_slave_write_buffer(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   char *s;
@@ -132,7 +170,12 @@ static mrb_value mrb_esp32_i2c_slave_write_buffer(mrb_state *mrb, mrb_value self
   return mrb_fixnum_value((mrb_int)i2c_slave_write_buffer(i2c->i2c_num, (uint8_t *)s, (int)size, (TickType_t)ticks_to_wait));
 }
 
-/* #slave_read_buffer */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv221i2c_slave_read_buffer10i2c_port_tP7uint8_t6size_t10TickType_t i2c_slave_read_buffer}
+ *
+ *     ticks_to_wait = 1234
+ *     i2c.slave_read_buffer(1234, ticks_to_wait)
+ */
 static mrb_value mrb_esp32_i2c_slave_read_buffer(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_value buf;
@@ -144,7 +187,12 @@ static mrb_value mrb_esp32_i2c_slave_read_buffer(mrb_state *mrb, mrb_value self)
   return mrb_str_resize(mrb, buf, size);
 }
 
-/* #set_period */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv214i2c_set_period10i2c_port_tii i2c_set_period}
+ *
+ *      high_period = low_period = 1234
+ *      i2c.set_period(high_period, low_period)
+ */
 static mrb_value mrb_esp32_i2c_set_period(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int high_period, low_period;
@@ -152,7 +200,11 @@ static mrb_value mrb_esp32_i2c_set_period(mrb_state *mrb, mrb_value self) {
   return mrb_fixnum_value(i2c_set_period(i2c->i2c_num, (int)high_period, (int)low_period));
 }
 
-/* #get_period */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv214i2c_get_period10i2c_port_tPiPi i2c_get_period}
+ *
+ *     ret, high_period, low_period = i2c.get_period
+ */
 static mrb_value mrb_esp32_i2c_get_period(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int high_period, low_period;
@@ -163,7 +215,12 @@ static mrb_value mrb_esp32_i2c_get_period(mrb_state *mrb, mrb_value self) {
   return ary;
 }
 
-/* #set_start_timing */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv220i2c_set_start_timing10i2c_port_tii i2c_set_start_timing}
+ *
+ *     setup_time = hold_time = 1234
+ *     i2c.set_start_timing(setup_time, hold_time)
+ */
 static mrb_value mrb_esp32_i2c_set_start_timing(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int setup_time, hold_time;
@@ -171,7 +228,11 @@ static mrb_value mrb_esp32_i2c_set_start_timing(mrb_state *mrb, mrb_value self) 
   return mrb_fixnum_value(i2c_set_start_timing(i2c->i2c_num, (int)setup_time, (int)hold_time));
 }
 
-/* #get_start_timing */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv220i2c_get_start_timing10i2c_port_tPiPi i2c_get_start_timing}
+ *
+ *     ret, setup_time, hold_time = i2c.get_start_timing
+ */
 static mrb_value mrb_esp32_i2c_get_start_timing(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int setup_time, hold_time;
@@ -182,7 +243,12 @@ static mrb_value mrb_esp32_i2c_get_start_timing(mrb_state *mrb, mrb_value self) 
   return ary;
 }
 
-/* #set_start_timing */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv219i2c_set_stop_timing10i2c_port_tii i2c_set_stop_timing}
+ *
+ *     setup_time = hold_time = 1234
+ *     i2c.set_stop_timing(setup_time, hold_time)
+ */
 static mrb_value mrb_esp32_i2c_set_stop_timing(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int setup_time, hold_time;
@@ -190,7 +256,11 @@ static mrb_value mrb_esp32_i2c_set_stop_timing(mrb_state *mrb, mrb_value self) {
   return mrb_fixnum_value(i2c_set_stop_timing(i2c->i2c_num, (int)setup_time, (int)hold_time));
 }
 
-/* #get_start_timing */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv219i2c_get_stop_timing10i2c_port_tPiPi i2c_get_stop_timing}
+ *
+ *     ret, setup_time, hold_time = i2c.get_stop_timing
+ */
 static mrb_value mrb_esp32_i2c_get_stop_timing(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int setup_time, hold_time;
@@ -201,7 +271,12 @@ static mrb_value mrb_esp32_i2c_get_stop_timing(mrb_state *mrb, mrb_value self) {
   return ary;
 }
 
-/* #set_data_timing */
+/*
+ *  {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv219i2c_set_data_timing10i2c_port_tii set_data_timing}
+ *
+ *     sample_time = hold_time = 1234
+ *     i2c.set_data_timing(sample_time, hold_time)
+ */
 static mrb_value mrb_esp32_i2c_set_data_timing(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int sample_time, hold_time;
@@ -209,7 +284,11 @@ static mrb_value mrb_esp32_i2c_set_data_timing(mrb_state *mrb, mrb_value self) {
   return mrb_fixnum_value(i2c_set_data_timing(i2c->i2c_num, (int)sample_time, (int)hold_time));
 }
 
-/* #get_data_timing */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv219i2c_get_data_timing10i2c_port_tPiPi i2c_get_data_timing}
+ *
+ *     ret, sample_time, hold_time = i2c.get_data_timing
+ */
 static mrb_value mrb_esp32_i2c_get_data_timing(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int sample_time, hold_time;
@@ -220,7 +299,11 @@ static mrb_value mrb_esp32_i2c_get_data_timing(mrb_state *mrb, mrb_value self) {
   return ary;
 }
 
-/* #set_timeout */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv215i2c_set_timeout10i2c_port_ti i2c_set_timeout}
+ *
+ *     i2c.set_timeout(1234)
+ */
 static mrb_value mrb_esp32_i2c_set_timeout(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int timeout;
@@ -228,7 +311,11 @@ static mrb_value mrb_esp32_i2c_set_timeout(mrb_state *mrb, mrb_value self) {
   return mrb_fixnum_value(i2c_set_timeout(i2c->i2c_num, (int)timeout));
 }
 
-/* #get_timeout */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv215i2c_get_timeout10i2c_port_tPi i2c_get_timeout}
+ *
+ *      ret, timeout = i2c.get_timeout
+ */
 static mrb_value mrb_esp32_i2c_get_timeout(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int timeout;
@@ -238,7 +325,12 @@ static mrb_value mrb_esp32_i2c_get_timeout(mrb_state *mrb, mrb_value self) {
   return ary;
 }
 
-/* #set_data_mode */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv217i2c_set_data_mode10i2c_port_t16i2c_trans_mode_t16i2c_trans_mode_t i2c_set_data_mode}
+ *
+ *     tx_trans_mode = rx_trans_mode = ESP32::I2C::DATA_MODE_MSB_FIRST
+ *     i2c.set_data_mode(tx_trans_mode, rx_trans_mode)
+ */
 static mrb_value mrb_esp32_i2c_set_data_mode(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int tx_trans_mode, rx_trans_mode;
@@ -246,7 +338,11 @@ static mrb_value mrb_esp32_i2c_set_data_mode(mrb_state *mrb, mrb_value self) {
   return mrb_fixnum_value(i2c_set_data_mode(i2c->i2c_num, (i2c_trans_mode_t)tx_trans_mode, (i2c_trans_mode_t)rx_trans_mode));
 }
 
-/* #get_data_mode */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv217i2c_get_data_mode10i2c_port_tP16i2c_trans_mode_tP16i2c_trans_mode_t i2c_get_data_mode}
+ *
+ *     ret, tx_trans_mode, rx_trans_mode = i2c.get_data_mode
+ */
 static mrb_value mrb_esp32_i2c_get_data_mode(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   i2c_trans_mode_t tx_trans_mode, rx_trans_mode;
@@ -257,7 +353,16 @@ static mrb_value mrb_esp32_i2c_get_data_mode(mrb_state *mrb, mrb_value self) {
   return ary;
 }
 
-/* #master_cmd_begin */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv216i2c_master_start16i2c_cmd_handle_t i2c_master_cmd_begin}
+ *
+ *     ticks_to_wait = 1234
+ *     cmd = ESP32::I2C::CmdHandle.new
+ *     cmd.master_start
+ *     # ...
+ *     cmd.master_stop
+ *     i2c.master_cmd_begin(cmd, ticks_to_wait)
+ */
 static mrb_value mrb_esp32_i2c_master_cmd_begin(mrb_state *mrb, mrb_value self) {
   mrb_value cmd;
   mrb_int ticks_to_wait;
@@ -272,7 +377,13 @@ static void mrb_esp32_i2c_isr_handler(void* arg) {
   mrb_funcall(a->mrb, a->block, "call", 0);
 }
 
-/* #isr_register */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv216i2c_isr_register10i2c_port_tPFvPvEPviP13intr_handle_t i2c_isr_register}
+ *
+ *     ret, intr_handle = i2c.isr_register(0) do
+ *       # interrupt
+ *     end
+ */
 static mrb_value mrb_esp32_i2c_isr_register(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_value block, ary, intr_handle;
@@ -315,6 +426,14 @@ static mrb_value mrb_esp32_i2c_isr_register(mrb_state *mrb, mrb_value self) {
  * ESP32::I2C::IntrHandle
  */
 
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv212i2c_isr_free13intr_handle_t i2c_isr_free}
+ *
+ *     ret, intr_handle = i2c.isr_register(0) do
+ *       # interrupt
+ *     end
+ *     intr_handle.free if ret == ESP32::OK
+ */
 static mrb_value mrb_esp32_i2c_intr_handle_free(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c_isr_arg *arg;
   esp_err_t ret;
@@ -358,6 +477,21 @@ static mrb_int option_to_mrb_int(mrb_state *mrb, mrb_value opt, const char *key,
   return mrb_fixnum(n);
 }
 
+/*
+ * initialize {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv212i2c_config_t ESP32::I2C::Config}
+ *
+ *     # Add hanachin/mruby-esp32-gpio to conf.gem to use ESP32::GPIO
+ *     config = ESP32::I2C::Config.new(
+ *       mode:          ESP32::I2C::MODE_MASTER,
+ *       sda_io_num:    ESP32::I2C::DEFAULT_SDA,
+ *       sda_pullup_en: ESP32::GPIO::PULLUP_ENABLE,
+ *       scl_io_num:    ESP32::I2C::DEFAULT_SCL,
+ *       scl_pullup_en: ESP32::GPIO::PULLUP_ENABLE,
+ *       clk_speed:     ESP32::I2C::DEFAULT_FREQ,
+ *       addr_10bit_en: ESP32::I2C::ADDR_BIT_7,
+ *       slave_addr:    ESP32::I2C::DEFAULT_SLAVE_ADDR
+ *     )
+ */
 static mrb_value mrb_esp32_i2c_config_init(mrb_state *mrb, mrb_value self) {
   i2c_config_t *i2c_config;
   mrb_value opt;
@@ -397,6 +531,12 @@ static mrb_value mrb_esp32_i2c_config_init(mrb_state *mrb, mrb_value self) {
 /*
  * ESP32::I2C::CmdHandle
  */
+
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv219i2c_cmd_link_createv i2c_cmd_link_create}
+ *
+ *     cmd = ESP32::I2C::CmdHandle.new
+ */
 static mrb_value mrb_esp32_i2c_cmd_handle_init(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *i2c_cmd_handle;
 
@@ -415,20 +555,35 @@ static mrb_value mrb_esp32_i2c_cmd_handle_init(mrb_state *mrb, mrb_value self) {
   return self;
 }
 
-/* #delete */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv219i2c_cmd_link_delete16i2c_cmd_handle_t i2c_cmd_link_delete}
+ *
+ *     cmd = ESP32::I2C::CmdHandle.new
+ *     # ...
+ *     cmd.delete
+ */
 static mrb_value mrb_esp32_i2c_cmd_handle_delete(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   i2c_cmd_link_delete(*cmd_handle);
   return mrb_nil_value();
 }
 
-/* #master_start */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv216i2c_master_start16i2c_cmd_handle_t i2c_master_start}
+ *
+ *     cmd.master_start
+ */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_start(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   return mrb_fixnum_value((mrb_int)i2c_master_start(*cmd_handle));
 }
 
-/* #master_write_byte */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv221i2c_master_write_byte16i2c_cmd_handle_t7uint8_tb i2c_master_write_byte}
+ *
+ *     ack_en = true
+ *     cmd.master_write_byte("a", ack_en)
+ */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_write_byte(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   mrb_value s;
@@ -437,7 +592,12 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_write_byte(mrb_state *mrb, mrb_
   return mrb_fixnum_value((mrb_int)i2c_master_write_byte(*cmd_handle, (uint8_t)RSTRING_PTR(s)[0], (bool)ack_en));
 }
 
-/* #master_write */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv216i2c_master_write16i2c_cmd_handle_tP7uint8_t6size_tb i2c_master_write}
+ *
+ *     ack_en = true
+ *     cmd.master_write("hi", ack_en)
+ */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_write(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   char *data;
@@ -447,7 +607,12 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_write(mrb_state *mrb, mrb_value
   return mrb_fixnum_value((mrb_int)i2c_master_write(*cmd_handle, (uint8_t *)data, (size_t)data_len, (bool)ack_en));
 }
 
-/* #master_read_byte */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv220i2c_master_read_byte16i2c_cmd_handle_tP7uint8_ti i2c_master_read_byte}
+ *
+ *     ack_en = true
+ *     ret, data = cmd.master_read_byte(ack_en)
+ */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_read_byte(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   mrb_value ary, s;
@@ -462,7 +627,12 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_read_byte(mrb_state *mrb, mrb_v
   return ary;
 }
 
-/* #master_read */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv215i2c_master_read16i2c_cmd_handle_tP7uint8_t6size_ti i2c_master_read}
+ *
+ *      ack_en = true
+ *      ret, data = cmd.master_read(1234, ack_en)
+ */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_read(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   mrb_value ary, s;
@@ -477,7 +647,11 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_read(mrb_state *mrb, mrb_value 
   return ary;
 }
 
-/* #master_stop */
+/*
+ * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv215i2c_master_stop16i2c_cmd_handle_t i2c_master_stop}
+ *
+ *     cmd.master_stop
+ */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_stop(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   return mrb_fixnum_value((mrb_int)i2c_master_stop(*cmd_handle));
