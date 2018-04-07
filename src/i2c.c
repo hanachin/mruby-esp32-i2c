@@ -8,6 +8,7 @@
 #include <driver/gpio.h>
 #include <driver/i2c.h>
 #include <esp_err.h>
+#include <freertos/FreeRTOS.h>
 
 /* https://github.com/espressif/esp-idf/blob/595ddfd8250426f2e76f7c47ffe9697eb13c455a/examples/peripherals/i2c/main/i2c_example_main.c#L65 */
 #define MRUBY_ESP32_I2C_DEFAULT_SLAVE_ADDR 0x28
@@ -763,6 +764,7 @@ void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
   mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_FREQ", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_FREQ));
   mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_SDA", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_SDA));
   mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_SCL", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_SCL));
+  mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_TICKS_TO_WAIT", mrb_fixnum_value(1000 / portTICK_RATE_MS));
 
   /* ESP32::I2C::CmdHandle */
   mrb_esp32_i2c_cmd_handle = mrb_define_class_under(mrb, mrb_esp32_i2c, "CmdHandle", mrb-> object_class);
