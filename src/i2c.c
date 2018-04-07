@@ -115,7 +115,7 @@ static mrb_value mrb_esp32_i2c_param_config(mrb_state *mrb, mrb_value self) {
   mrb_value i2c_config;
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   i2c_config_t *i2c_conf;
-  mrb_get_args(mrb, "o", i2c_config);
+  mrb_get_args(mrb, "o", &i2c_config);
   i2c_conf = (i2c_config_t *)DATA_PTR(i2c_config);
   return mrb_fixnum_value((mrb_int)i2c_param_config(i2c->i2c_num, i2c_conf));
 }
