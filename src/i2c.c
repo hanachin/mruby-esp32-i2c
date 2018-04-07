@@ -611,17 +611,16 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_write(mrb_state *mrb, mrb_value
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv220i2c_master_read_byte16i2c_cmd_handle_tP7uint8_ti i2c_master_read_byte}
  *
- *     ack_en = true
- *     ret, data = cmd.master_read_byte(ack_en)
+ *     ret, data = cmd.master_read_byte(ESP32::I2C::MASTER_ACK)
  */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_read_byte(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   mrb_value ary, s;
-  mrb_bool ack_en;
+  mrb_int ack;
   esp_err_t ret;
-  mrb_get_args(mrb, "b", &ack_en);
+  mrb_get_args(mrb, "i", &ack);
   s = mrb_str_new(mrb, NULL, 1);
-  ret = i2c_master_read_byte(*cmd_handle, RSTRING_PTR(s), (bool)ack_en);
+  ret = i2c_master_read_byte(*cmd_handle, RSTRING_PTR(s), (i2c_ack_type_t)ack);
   ary = mrb_ary_new_capa(mrb, 2);
   mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
   mrb_ary_set(mrb, ary, 1, s);
@@ -631,18 +630,16 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_read_byte(mrb_state *mrb, mrb_v
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv215i2c_master_read16i2c_cmd_handle_tP7uint8_t6size_ti i2c_master_read}
  *
- *      ack_en = true
- *      ret, data = cmd.master_read(1234, ack_en)
+ *      ret, data = cmd.master_read(1234, ESP32::I2C::MASTER_ACK)
  */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_read(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   mrb_value ary, s;
   esp_err_t ret;
-  mrb_int data_len;
-  mrb_bool ack_en;
-  mrb_get_args(mrb, "ib", &data_len, &ack_en);
+  mrb_int data_len, ack;
+  mrb_get_args(mrb, "ii", &data_len, &ack);
   s = mrb_str_new(mrb, NULL, data_len);
-  ret = i2c_master_read(*cmd_handle, (uint8_t *)RSTRING_PTR(s), (size_t)data_len, (bool)ack_en);
+  ret = i2c_master_read(*cmd_handle, (uint8_t *)RSTRING_PTR(s), (size_t)data_len, (i2c_ack_type_t)ack);
   mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
   mrb_ary_set(mrb, ary, 1, s);
   return ary;
