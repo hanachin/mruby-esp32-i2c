@@ -640,6 +640,7 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_read(mrb_state *mrb, mrb_value 
   mrb_get_args(mrb, "ii", &data_len, &ack);
   s = mrb_str_new(mrb, NULL, data_len);
   ret = i2c_master_read(*cmd_handle, (uint8_t *)RSTRING_PTR(s), (size_t)data_len, (i2c_ack_type_t)ack);
+  ary = mrb_ary_new_capa(mrb, 2);
   mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
   mrb_ary_set(mrb, ary, 1, s);
   return ary;
