@@ -601,42 +601,50 @@ static mrb_value mrb_esp32_i2c_read(mrb_state *mrb, mrb_value self) {
 
   err = i2c_master_start(cmd);
   if (err != ESP_OK) {
+    i2c_cmd_link_delete(cmd);
     mrb_raise_esp32_err(mrb, err);
   }
 
   err = i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_WRITE), true);
   if (err != ESP_OK) {
+    i2c_cmd_link_delete(cmd);
     mrb_raise_esp32_err(mrb, err);
   }
 
   err = i2c_master_write_byte(cmd, (uint8_t)reg, true);
   if (err != ESP_OK) {
+    i2c_cmd_link_delete(cmd);
     mrb_raise_esp32_err(mrb, err);
   }
 
   err = i2c_master_start(cmd);
   if (err != ESP_OK) {
+    i2c_cmd_link_delete(cmd);
     mrb_raise_esp32_err(mrb, err);
   }
 
   err = i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_READ), true);
   if (err != ESP_OK) {
+    i2c_cmd_link_delete(cmd);
     mrb_raise_esp32_err(mrb, err);
   }
 
   err = i2c_master_read(cmd, (uint8_t *)RSTRING_PTR(s), (size_t)n, I2C_MASTER_LAST_NACK);
   if (err != ESP_OK) {
+    i2c_cmd_link_delete(cmd);
     mrb_raise_esp32_err(mrb, err);
   }
 
   err = i2c_master_stop(cmd);
   if (err != ESP_OK) {
+    i2c_cmd_link_delete(cmd);
     mrb_raise_esp32_err(mrb, err);
   }
 
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   err = i2c_master_cmd_begin(i2c->i2c_num, cmd, (TickType_t)ticks_to_wait);
   if (err != ESP_OK) {
+    i2c_cmd_link_delete(cmd);
     mrb_raise_esp32_err(mrb, err);
   }
 
