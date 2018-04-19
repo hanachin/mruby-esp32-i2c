@@ -10,9 +10,10 @@ module ESP32
     def cmd(ticks_to_wait = ::ESP32::I2C::DEFAULT_TICKS_TO_WAIT)
       cmd = ESP32::I2C::CmdHandle.new
       yield cmd
-      master_cmd_begin(cmd, ticks_to_wait)
+      ret = master_cmd_begin(cmd, ticks_to_wait)
     ensure
       cmd.delete
+      ret
     end
   end
 end
