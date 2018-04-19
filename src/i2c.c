@@ -438,6 +438,63 @@ static mrb_value mrb_esp32_i2c_isr_register(mrb_state *mrb, mrb_value self) {
 }
 
 /*
+ * i2c.write(addr, reg, data, ticks_to_wait = ESP32::I2C::DEFAULT_TICKS_TO_WAIT)
+ */
+static mrb_value mrb_esp32_i2c_write(mrb_state *mrb, mrb_value self) {
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  mrb_int addr, reg, data_len, ticks_to_wait = MRUBY_ESP32_I2C_DEFAULT_TICKS_TO_WAIT;
+  char *data;
+  mrb_get_args(mrb, "iis|i",  &addr, &reg, &data, &data_len, &ticks_to_wait);
+
+# ifdef DEBUG
+  printf("%d\n", (uint8_t)((addr << 1) | I2C_MASTER_WRITE));
+  printf("first   : %d\n", (uint8_t)((addr << 1) | I2C_MASTER_WRITE));
+  printf("data    : %d\n", data[0]);
+  printf("data_len: %d\n", (size_t)data_len);
+  printf("ticks   : %d\n", (TickType_t)ticks_to_wait);
+#endif
+
+  i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+  i2c_master_start(cmd);
+  i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_WRITE), true);
+  i2c_master_write_byte(cmd, (uint8_t)reg, true);
+  i2c_master_write(cmd, (uint8_t *)data, (size_t)data_len, true);
+  i2c_master_stop(cmd);
+  esp_err_t ret = i2c_master_cmd_begin(i2c->i2c_num, cmd, (TickType_t)ticks_to_wait);
+  i2c_cmd_link_delete(cmd);
+
+  return mrb_fixnum_value((mrb_int)ret);
+}
+
+/*
+ * i2c.read(addr, reg, n = 1, ticks_to_wait = ESP32::I2C::DEFAULT_TICKS_TO_WAIT)
+ */
+static mrb_value mrb_esp32_i2c_read(mrb_state *mrb, mrb_value self) {
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  mrb_int addr, reg, n = 1, ticks_to_wait = MRUBY_ESP32_I2C_DEFAULT_TICKS_TO_WAIT;
+  mrb_get_args(mrb, "ii|ii",  &addr, &reg, &n, &ticks_to_wait);
+
+  mrb_value s = mrb_str_new(mrb, NULL, n);
+
+  i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+  i2c_master_start(cmd);
+  i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_WRITE), true);
+  i2c_master_write_byte(cmd, (uint8_t)reg, true);
+  i2c_master_start(cmd);
+  i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_READ), true);
+  i2c_master_read(cmd, (uint8_t *)RSTRING_PTR(s), (size_t)n, I2C_MASTER_LAST_NACK);
+  i2c_master_stop(cmd);
+  esp_err_t ret = i2c_master_cmd_begin(i2c->i2c_num, cmd, (TickType_t)ticks_to_wait);
+  i2c_cmd_link_delete(cmd);
+
+  if (ret == ESP_OK) {
+    return s;
+  } else {
+    return mrb_fixnum_value((mrb_int)ret);
+  }
+}
+
+/*
  * ESP32::I2C::IntrHandle
  */
 
@@ -705,6 +762,8 @@ void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
   mrb_define_method(mrb, mrb_esp32_i2c, "get_data_mode", mrb_esp32_i2c_get_data_mode, MRB_ARGS_NONE());
   mrb_define_method(mrb, mrb_esp32_i2c, "master_cmd_begin", mrb_esp32_i2c_master_cmd_begin, MRB_ARGS_REQ(2));
   mrb_define_method(mrb, mrb_esp32_i2c, "isr_register", mrb_esp32_i2c_isr_register, MRB_ARGS_REQ(1) | MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, mrb_esp32_i2c, "write", mrb_esp32_i2c_write, MRB_ARGS_REQ(3) | MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, mrb_esp32_i2c, "read", mrb_esp32_i2c_read, MRB_ARGS_REQ(2) | MRB_ARGS_OPT(2));
 
   /* ESP32::I2C::IntrHandle */
   mrb_i2c_intr_handle = mrb_define_class_under(mrb, mrb_esp32_i2c, "IntrHandle", mrb->object_class);
