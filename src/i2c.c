@@ -9,6 +9,7 @@
 #include <driver/i2c.h>
 #include <esp_err.h>
 #include <freertos/FreeRTOS.h>
+#include <mruby-esp32-ext_esp_err.h>
 
 /* https://github.com/espressif/esp-idf/blob/595ddfd8250426f2e76f7c47ffe9697eb13c455a/examples/peripherals/i2c/main/i2c_example_main.c#L65 */
 #define MRUBY_ESP32_I2C_DEFAULT_SLAVE_ADDR 0x28
@@ -61,13 +62,11 @@ static const struct mrb_data_type mrb_esp32_i2c_cmd_handle_type = {
  *     i2c = ESP32::I2C.new(ESP32::I2C::NUM_0, ESP32::I2C::MODE_MASTER, 0, 0, 0)
  */
 static mrb_value mrb_esp32_i2c_init(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c;
   mrb_int i2c_num, mode, slv_rx_buf_len, slv_tx_buf_len, intr_alloc_flags;
-
   mrb_get_args(mrb, "iiiii", &i2c_num, &mode, &slv_rx_buf_len, &slv_tx_buf_len, &intr_alloc_flags);
 
   /* avoid memory leaks */
-  i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   if (i2c) {
     mrb_free(mrb, i2c);
   }
@@ -94,7 +93,12 @@ static mrb_value mrb_esp32_i2c_init(mrb_state *mrb, mrb_value self) {
  */
 static mrb_value mrb_esp32_i2c_driver_install(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
-  return mrb_fixnum_value((mrb_int)i2c_driver_install(i2c->i2c_num, i2c->mode, i2c->slv_rx_buf_len, i2c->slv_tx_buf_len, i2c->intr_alloc_flags));
+  esp_err_t err = i2c_driver_install(i2c->i2c_num, i2c->mode, i2c->slv_rx_buf_len, i2c->slv_tx_buf_len, i2c->intr_alloc_flags);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
@@ -104,7 +108,12 @@ static mrb_value mrb_esp32_i2c_driver_install(mrb_state *mrb, mrb_value self) {
  */
 static mrb_value mrb_esp32_i2c_driver_delete(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
-  return mrb_fixnum_value((mrb_int)i2c_driver_delete(i2c->i2c_num));
+  esp_err_t err = i2c_driver_delete(i2c->i2c_num);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
@@ -115,11 +124,9 @@ static mrb_value mrb_esp32_i2c_driver_delete(mrb_state *mrb, mrb_value self) {
  */
 static mrb_value mrb_esp32_i2c_param_config(mrb_state *mrb, mrb_value self) {
   mrb_value i2c_config;
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
-  i2c_config_t *i2c_conf;
   mrb_get_args(mrb, "o", &i2c_config);
-  i2c_conf = (i2c_config_t *)DATA_PTR(i2c_config);
 
+  i2c_config_t *i2c_conf = (i2c_config_t *)DATA_PTR(i2c_config);
 #ifdef DEBUG
   printf("*** param_config ***\n");
   printf("--------------------\n");
@@ -131,7 +138,13 @@ static mrb_value mrb_esp32_i2c_param_config(mrb_state *mrb, mrb_value self) {
   printf("clk_speed    : %d\n", i2c_conf->master.clk_speed);
 #endif
 
-  return mrb_fixnum_value((mrb_int)i2c_param_config(i2c->i2c_num, i2c_conf));
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  esp_err_t err = i2c_param_config(i2c->i2c_num, i2c_conf);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
@@ -141,7 +154,12 @@ static mrb_value mrb_esp32_i2c_param_config(mrb_state *mrb, mrb_value self) {
  */
 static mrb_value mrb_esp32_i2c_reset_tx_fifo(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
-  return mrb_fixnum_value((mrb_int)i2c_reset_tx_fifo(i2c->i2c_num));
+  esp_err_t err = i2c_reset_tx_fifo(i2c->i2c_num);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
@@ -151,7 +169,12 @@ static mrb_value mrb_esp32_i2c_reset_tx_fifo(mrb_state *mrb, mrb_value self) {
  */
 static mrb_value mrb_esp32_i2c_reset_rx_fifo(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
-  return mrb_fixnum_value((mrb_int)i2c_reset_rx_fifo(i2c->i2c_num));
+  esp_err_t err = i2c_reset_rx_fifo(i2c->i2c_num);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
@@ -164,10 +187,16 @@ static mrb_value mrb_esp32_i2c_reset_rx_fifo(mrb_state *mrb, mrb_value self) {
  *   i2c.set_pin(sda_io_num, scl_io_num, sda_pullup_en, scl_pullup_en, ESP32::I2C::MODE_MASTER)
  */
 static mrb_value mrb_esp32_i2c_set_pin(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int sda_io_num, scl_io_num, sda_pullup_en, scl_pullup_en, mode;
   mrb_get_args(mrb, "iiiiii", &sda_io_num, &scl_io_num, &sda_pullup_en, &scl_pullup_en, &mode);
-  return mrb_fixnum_value((mrb_int)i2c_set_pin(i2c->i2c_num, (gpio_num_t)sda_io_num, (gpio_num_t)scl_io_num, (gpio_pullup_t)sda_pullup_en, (gpio_pullup_t)scl_pullup_en, (i2c_mode_t)mode));
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  esp_err_t err = i2c_set_pin(i2c->i2c_num, (gpio_num_t)sda_io_num, (gpio_num_t)scl_io_num, (gpio_pullup_t)sda_pullup_en, (gpio_pullup_t)scl_pullup_en, (i2c_mode_t)mode);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
@@ -178,11 +207,17 @@ static mrb_value mrb_esp32_i2c_set_pin(mrb_state *mrb, mrb_value self) {
  *
 */
 static mrb_value mrb_esp32_i2c_slave_write_buffer(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   char *s;
   mrb_int size, ticks_to_wait;
   mrb_get_args(mrb, "si", &s, &size, &ticks_to_wait);
-  return mrb_fixnum_value((mrb_int)i2c_slave_write_buffer(i2c->i2c_num, (uint8_t *)s, (int)size, (TickType_t)ticks_to_wait));
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  int write_size = i2c_slave_write_buffer(i2c->i2c_num, (uint8_t *)s, (int)size, (TickType_t)ticks_to_wait);
+  if (write_size < 0) {
+    mrb_raise_esp32_err(mrb, size);
+  }
+
+  return mrb_fixnum_value(size);
 }
 
 /*
@@ -193,12 +228,15 @@ static mrb_value mrb_esp32_i2c_slave_write_buffer(mrb_state *mrb, mrb_value self
  */
 static mrb_value mrb_esp32_i2c_slave_read_buffer(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
-  mrb_value buf;
   mrb_int max_size, ticks_to_wait;
-  int size;
   mrb_get_args(mrb, "ii", &max_size, &ticks_to_wait);
-  buf = mrb_str_new(mrb, NULL, max_size);
-  size = i2c_slave_read_buffer(i2c->i2c_num, (uint8_t *)RSTRING_PTR(buf), (int)max_size, (TickType_t)ticks_to_wait);
+
+  mrb_value buf = mrb_str_new(mrb, NULL, max_size);
+  int size = i2c_slave_read_buffer(i2c->i2c_num, (uint8_t *)RSTRING_PTR(buf), (int)max_size, (TickType_t)ticks_to_wait);
+  if (size < 0) {
+    mrb_raise_esp32_err(mrb, size);
+  }
+
   return mrb_str_resize(mrb, buf, size);
 }
 
@@ -209,24 +247,34 @@ static mrb_value mrb_esp32_i2c_slave_read_buffer(mrb_state *mrb, mrb_value self)
  *      i2c.set_period(high_period, low_period)
  */
 static mrb_value mrb_esp32_i2c_set_period(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int high_period, low_period;
   mrb_get_args(mrb, "ii", &high_period, &low_period);
-  return mrb_fixnum_value(i2c_set_period(i2c->i2c_num, (int)high_period, (int)low_period));
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  esp_err_t err = i2c_set_period(i2c->i2c_num, (int)high_period, (int)low_period);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv214i2c_get_period10i2c_port_tPiPi i2c_get_period}
  *
- *     ret, high_period, low_period = i2c.get_period
+ *     high_period, low_period = i2c.get_period
  */
 static mrb_value mrb_esp32_i2c_get_period(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int high_period, low_period;
-  mrb_value ary = mrb_ary_new_capa(mrb, 3);
-  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(i2c_get_period(i2c->i2c_num, &high_period, &low_period)));
-  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value(high_period));
-  mrb_ary_set(mrb, ary, 2, mrb_fixnum_value(low_period));
+  esp_err_t err = i2c_get_period(i2c->i2c_num, &high_period, &low_period);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  mrb_value ary = mrb_ary_new_capa(mrb, 2);
+  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(high_period));
+  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value(low_period));
   return ary;
 }
 
@@ -237,24 +285,34 @@ static mrb_value mrb_esp32_i2c_get_period(mrb_state *mrb, mrb_value self) {
  *     i2c.set_start_timing(setup_time, hold_time)
  */
 static mrb_value mrb_esp32_i2c_set_start_timing(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int setup_time, hold_time;
   mrb_get_args(mrb, "ii", &setup_time, &hold_time);
-  return mrb_fixnum_value(i2c_set_start_timing(i2c->i2c_num, (int)setup_time, (int)hold_time));
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  esp_err_t err = i2c_set_start_timing(i2c->i2c_num, (int)setup_time, (int)hold_time);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv220i2c_get_start_timing10i2c_port_tPiPi i2c_get_start_timing}
  *
- *     ret, setup_time, hold_time = i2c.get_start_timing
+ *     setup_time, hold_time = i2c.get_start_timing
  */
 static mrb_value mrb_esp32_i2c_get_start_timing(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int setup_time, hold_time;
-  mrb_value ary = mrb_ary_new_capa(mrb, 3);
-  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(i2c_get_start_timing(i2c->i2c_num, &setup_time, &hold_time)));
-  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value(setup_time));
-  mrb_ary_set(mrb, ary, 2, mrb_fixnum_value(hold_time));
+  esp_err_t err = i2c_get_start_timing(i2c->i2c_num, &setup_time, &hold_time);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  mrb_value ary = mrb_ary_new_capa(mrb, 2);
+  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(setup_time));
+  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value(hold_time));
   return ary;
 }
 
@@ -265,24 +323,34 @@ static mrb_value mrb_esp32_i2c_get_start_timing(mrb_state *mrb, mrb_value self) 
  *     i2c.set_stop_timing(setup_time, hold_time)
  */
 static mrb_value mrb_esp32_i2c_set_stop_timing(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int setup_time, hold_time;
   mrb_get_args(mrb, "ii", &setup_time, &hold_time);
-  return mrb_fixnum_value(i2c_set_stop_timing(i2c->i2c_num, (int)setup_time, (int)hold_time));
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  esp_err_t err = i2c_set_stop_timing(i2c->i2c_num, (int)setup_time, (int)hold_time);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv219i2c_get_stop_timing10i2c_port_tPiPi i2c_get_stop_timing}
  *
- *     ret, setup_time, hold_time = i2c.get_stop_timing
+ *     setup_time, hold_time = i2c.get_stop_timing
  */
 static mrb_value mrb_esp32_i2c_get_stop_timing(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int setup_time, hold_time;
-  mrb_value ary = mrb_ary_new_capa(mrb, 3);
-  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(i2c_get_stop_timing(i2c->i2c_num, &setup_time, &hold_time)));
-  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value(setup_time));
-  mrb_ary_set(mrb, ary, 2, mrb_fixnum_value(hold_time));
+  esp_err_t err = i2c_get_stop_timing(i2c->i2c_num, &setup_time, &hold_time);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  mrb_value ary = mrb_ary_new_capa(mrb, 2);
+  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(setup_time));
+  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value(hold_time));
   return ary;
 }
 
@@ -293,24 +361,34 @@ static mrb_value mrb_esp32_i2c_get_stop_timing(mrb_state *mrb, mrb_value self) {
  *     i2c.set_data_timing(sample_time, hold_time)
  */
 static mrb_value mrb_esp32_i2c_set_data_timing(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int sample_time, hold_time;
   mrb_get_args(mrb, "ii", &sample_time, &hold_time);
-  return mrb_fixnum_value(i2c_set_data_timing(i2c->i2c_num, (int)sample_time, (int)hold_time));
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  esp_err_t err = i2c_set_data_timing(i2c->i2c_num, (int)sample_time, (int)hold_time);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv219i2c_get_data_timing10i2c_port_tPiPi i2c_get_data_timing}
  *
- *     ret, sample_time, hold_time = i2c.get_data_timing
+ *     sample_time, hold_time = i2c.get_data_timing
  */
 static mrb_value mrb_esp32_i2c_get_data_timing(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int sample_time, hold_time;
-  mrb_value ary = mrb_ary_new_capa(mrb, 3);
-  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(i2c_get_data_timing(i2c->i2c_num, &sample_time, &hold_time)));
-  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value(sample_time));
-  mrb_ary_set(mrb, ary, 2, mrb_fixnum_value(hold_time));
+  esp_err_t err = i2c_get_data_timing(i2c->i2c_num, &sample_time, &hold_time);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  mrb_value ary = mrb_ary_new_capa(mrb, 2);
+  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(sample_time));
+  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value(hold_time));
   return ary;
 }
 
@@ -320,24 +398,32 @@ static mrb_value mrb_esp32_i2c_get_data_timing(mrb_state *mrb, mrb_value self) {
  *     i2c.set_timeout(1234)
  */
 static mrb_value mrb_esp32_i2c_set_timeout(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int timeout;
   mrb_get_args(mrb, "i", &timeout);
-  return mrb_fixnum_value(i2c_set_timeout(i2c->i2c_num, (int)timeout));
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  esp_err_t err = i2c_set_timeout(i2c->i2c_num, (int)timeout);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv215i2c_get_timeout10i2c_port_tPi i2c_get_timeout}
  *
- *      ret, timeout = i2c.get_timeout
+ *      timeout = i2c.get_timeout
  */
 static mrb_value mrb_esp32_i2c_get_timeout(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   int timeout;
-  mrb_value ary = mrb_ary_new_capa(mrb, 2);
-  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(i2c_get_timeout(i2c->i2c_num, &timeout)));
-  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value(timeout));
-  return ary;
+  esp_err_t err = i2c_get_timeout(i2c->i2c_num, &timeout);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_fixnum_value(timeout);
 }
 
 /*
@@ -347,24 +433,34 @@ static mrb_value mrb_esp32_i2c_get_timeout(mrb_state *mrb, mrb_value self) {
  *     i2c.set_data_mode(tx_trans_mode, rx_trans_mode)
  */
 static mrb_value mrb_esp32_i2c_set_data_mode(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int tx_trans_mode, rx_trans_mode;
   mrb_get_args(mrb, "ii", &tx_trans_mode, &rx_trans_mode);
-  return mrb_fixnum_value(i2c_set_data_mode(i2c->i2c_num, (i2c_trans_mode_t)tx_trans_mode, (i2c_trans_mode_t)rx_trans_mode));
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  esp_err_t err = i2c_set_data_mode(i2c->i2c_num, (i2c_trans_mode_t)tx_trans_mode, (i2c_trans_mode_t)rx_trans_mode);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv217i2c_get_data_mode10i2c_port_tP16i2c_trans_mode_tP16i2c_trans_mode_t i2c_get_data_mode}
  *
- *     ret, tx_trans_mode, rx_trans_mode = i2c.get_data_mode
+ *     tx_trans_mode, rx_trans_mode = i2c.get_data_mode
  */
 static mrb_value mrb_esp32_i2c_get_data_mode(mrb_state *mrb, mrb_value self) {
   mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   i2c_trans_mode_t tx_trans_mode, rx_trans_mode;
-  mrb_value ary = mrb_ary_new_capa(mrb, 3);
-  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value(i2c_get_data_mode(i2c->i2c_num, &tx_trans_mode, &rx_trans_mode)));
-  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value((mrb_int)tx_trans_mode));
-  mrb_ary_set(mrb, ary, 2, mrb_fixnum_value((mrb_int)rx_trans_mode));
+  esp_err_t err = i2c_get_data_mode(i2c->i2c_num, &tx_trans_mode, &rx_trans_mode);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  mrb_value ary = mrb_ary_new_capa(mrb, 2);
+  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)tx_trans_mode));
+  mrb_ary_set(mrb, ary, 1, mrb_fixnum_value((mrb_int)rx_trans_mode));
   return ary;
 }
 
@@ -381,10 +477,18 @@ static mrb_value mrb_esp32_i2c_get_data_mode(mrb_state *mrb, mrb_value self) {
 static mrb_value mrb_esp32_i2c_master_cmd_begin(mrb_state *mrb, mrb_value self) {
   mrb_value cmd;
   mrb_int ticks_to_wait;
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_get_args(mrb, "oi", &cmd, &ticks_to_wait);
+
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(cmd);
-  return mrb_fixnum_value(i2c_master_cmd_begin(i2c->i2c_num, *cmd_handle, (TickType_t)ticks_to_wait));
+
+  esp_err_t err = i2c_master_cmd_begin(i2c->i2c_num, *cmd_handle, (TickType_t)ticks_to_wait);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 static void mrb_esp32_i2c_isr_handler(void* arg) {
@@ -395,53 +499,42 @@ static void mrb_esp32_i2c_isr_handler(void* arg) {
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv216i2c_isr_register10i2c_port_tPFvPvEPviP13intr_handle_t i2c_isr_register}
  *
- *     ret, intr_handle = i2c.isr_register(0) do
+ *     intr_handle = i2c.isr_register(0) do
  *       # interrupt
  *     end
  */
 static mrb_value mrb_esp32_i2c_isr_register(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
-  mrb_value block, ary, intr_handle;
-  mrb_esp32_i2c_isr_arg *arg;
+  mrb_value block;
   int intr_alloc_flags;
-  esp_err_t ret;
-  struct RClass *mrb_esp32, *mrb_esp32_i2c, *mrb_esp32_i2c_intr_handle;
-
   mrb_get_args(mrb, "i&", &intr_alloc_flags, &block);
 
-  arg = (mrb_esp32_i2c_isr_arg *)mrb_malloc(mrb, sizeof(mrb_esp32_i2c_isr_arg));
+  mrb_esp32_i2c_isr_arg *arg = (mrb_esp32_i2c_isr_arg *)mrb_malloc(mrb, sizeof(mrb_esp32_i2c_isr_arg));
   arg->mrb = mrb;
   arg->block = block;
 
-  ret = i2c_isr_register(i2c->i2c_num, mrb_esp32_i2c_isr_handler, arg, intr_alloc_flags, &arg->intr_handle);
-
-  if (ret == ESP_OK) {
-    mrb_gc_register(mrb, block);
-
-    mrb_esp32 = mrb_define_module(mrb, "ESP32");
-    mrb_esp32_i2c = mrb_define_class_under(mrb, mrb_esp32, "I2C", mrb->object_class);
-    mrb_esp32_i2c_intr_handle = mrb_define_class_under(mrb, mrb_esp32_i2c, "IntrHandle", mrb->object_class);
-
-    intr_handle = mrb_obj_new(mrb, mrb_esp32_i2c_intr_handle, 0, NULL);
-    mrb_data_init(intr_handle, arg, &mrb_esp32_i2c_intr_handle_type);
-
-    ary = mrb_ary_new_capa(mrb, 2);
-    mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
-    mrb_ary_set(mrb, ary, 1, intr_handle);
-  } else {
-    ary = mrb_ary_new_capa(mrb, 2);
-    mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
-    mrb_ary_set(mrb, ary, 1, mrb_nil_value());
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  esp_err_t err = i2c_isr_register(i2c->i2c_num, mrb_esp32_i2c_isr_handler, arg, intr_alloc_flags, &arg->intr_handle);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
   }
 
-  return ary;
+  mrb_gc_register(mrb, block);
+
+  struct RClass *mrb_esp32, *mrb_esp32_i2c, *mrb_esp32_i2c_intr_handle;
+  mrb_esp32 = mrb_module_get(mrb, "ESP32");
+  mrb_esp32_i2c = mrb_class_get_under(mrb, mrb_esp32, "I2C");
+  mrb_esp32_i2c_intr_handle = mrb_class_get_under(mrb, mrb_esp32_i2c, "IntrHandle");
+
+  mrb_value intr_handle = mrb_obj_new(mrb, mrb_esp32_i2c_intr_handle, 0, NULL);
+  mrb_data_init(intr_handle, arg, &mrb_esp32_i2c_intr_handle_type);
+
+  return intr_handle;
 }
 
 /*
  * i2c.write(addr, reg, data, ticks_to_wait = ESP32::I2C::DEFAULT_TICKS_TO_WAIT)
  */
 static mrb_value mrb_esp32_i2c_write(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int addr, reg, data_len, ticks_to_wait = MRUBY_ESP32_I2C_DEFAULT_TICKS_TO_WAIT;
   char *data;
   mrb_get_args(mrb, "iis|i",  &addr, &reg, &data, &data_len, &ticks_to_wait);
@@ -455,43 +548,101 @@ static mrb_value mrb_esp32_i2c_write(mrb_state *mrb, mrb_value self) {
 #endif
 
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-  i2c_master_start(cmd);
-  i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_WRITE), true);
-  i2c_master_write_byte(cmd, (uint8_t)reg, true);
-  i2c_master_write(cmd, (uint8_t *)data, (size_t)data_len, true);
-  i2c_master_stop(cmd);
-  esp_err_t ret = i2c_master_cmd_begin(i2c->i2c_num, cmd, (TickType_t)ticks_to_wait);
+
+  esp_err_t err = ESP_OK;
+
+  err = i2c_master_start(cmd);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_WRITE), true);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_write_byte(cmd, (uint8_t)reg, true);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_write(cmd, (uint8_t *)data, (size_t)data_len, true);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_stop(cmd);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  err = i2c_master_cmd_begin(i2c->i2c_num, cmd, (TickType_t)ticks_to_wait);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
   i2c_cmd_link_delete(cmd);
 
-  return mrb_fixnum_value((mrb_int)ret);
+  return mrb_nil_value();
 }
 
 /*
  * i2c.read(addr, reg, n = 1, ticks_to_wait = ESP32::I2C::DEFAULT_TICKS_TO_WAIT)
  */
 static mrb_value mrb_esp32_i2c_read(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
   mrb_int addr, reg, n = 1, ticks_to_wait = MRUBY_ESP32_I2C_DEFAULT_TICKS_TO_WAIT;
   mrb_get_args(mrb, "ii|ii",  &addr, &reg, &n, &ticks_to_wait);
 
   mrb_value s = mrb_str_new(mrb, NULL, n);
 
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-  i2c_master_start(cmd);
-  i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_WRITE), true);
-  i2c_master_write_byte(cmd, (uint8_t)reg, true);
-  i2c_master_start(cmd);
-  i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_READ), true);
-  i2c_master_read(cmd, (uint8_t *)RSTRING_PTR(s), (size_t)n, I2C_MASTER_LAST_NACK);
-  i2c_master_stop(cmd);
-  esp_err_t ret = i2c_master_cmd_begin(i2c->i2c_num, cmd, (TickType_t)ticks_to_wait);
+  esp_err_t err = ESP_OK;
+
+  err = i2c_master_start(cmd);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_WRITE), true);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_write_byte(cmd, (uint8_t)reg, true);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_start(cmd);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_write_byte(cmd, (uint8_t)((addr << 1) | I2C_MASTER_READ), true);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_read(cmd, (uint8_t *)RSTRING_PTR(s), (size_t)n, I2C_MASTER_LAST_NACK);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  err = i2c_master_stop(cmd);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  mrb_esp32_i2c *i2c = (mrb_esp32_i2c *)DATA_PTR(self);
+  err = i2c_master_cmd_begin(i2c->i2c_num, cmd, (TickType_t)ticks_to_wait);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
   i2c_cmd_link_delete(cmd);
 
-  if (ret == ESP_OK) {
-    return s;
-  } else {
-    return mrb_fixnum_value((mrb_int)ret);
-  }
+  return s;
 }
 
 /*
@@ -501,19 +652,23 @@ static mrb_value mrb_esp32_i2c_read(mrb_state *mrb, mrb_value self) {
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv212i2c_isr_free13intr_handle_t i2c_isr_free}
  *
- *     ret, intr_handle = i2c.isr_register(0) do
+ *     intr_handle = i2c.isr_register(0) do
  *       # interrupt
  *     end
- *     intr_handle.free if ret == ESP32::OK
+ *     intr_handle.free
  */
 static mrb_value mrb_esp32_i2c_intr_handle_free(mrb_state *mrb, mrb_value self) {
-  mrb_esp32_i2c_isr_arg *arg;
-  esp_err_t ret;
-  arg = (mrb_esp32_i2c_isr_arg *)DATA_PTR(self);
-  ret = i2c_isr_free(arg->intr_handle);
+  mrb_esp32_i2c_isr_arg *arg = (mrb_esp32_i2c_isr_arg *)DATA_PTR(self);
+  esp_err_t err = i2c_isr_free(arg->intr_handle);
+
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
   mrb_gc_unregister(mrb, arg->block);
   mrb_data_init(self, NULL, &mrb_esp32_i2c_intr_handle_type);
-  return mrb_fixnum_value((mrb_int)ret);
+
+  return mrb_nil_value();
 }
 
 /*
@@ -647,7 +802,12 @@ static mrb_value mrb_esp32_i2c_cmd_handle_delete(mrb_state *mrb, mrb_value self)
  */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_start(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
-  return mrb_fixnum_value((mrb_int)i2c_master_start(*cmd_handle));
+  esp_err_t err = i2c_master_start(*cmd_handle);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
@@ -657,11 +817,17 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_start(mrb_state *mrb, mrb_value
  *     cmd.master_write_byte("a", ack_en)
  */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_write_byte(mrb_state *mrb, mrb_value self) {
-  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   mrb_value s;
   mrb_bool ack_en;
   mrb_get_args(mrb, "Sb", &s, &ack_en);
-  return mrb_fixnum_value((mrb_int)i2c_master_write_byte(*cmd_handle, (uint8_t)RSTRING_PTR(s)[0], (bool)ack_en));
+
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  esp_err_t err = i2c_master_write_byte(*cmd_handle, (uint8_t)RSTRING_PTR(s)[0], (bool)ack_en);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
@@ -671,50 +837,56 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_write_byte(mrb_state *mrb, mrb_
  *     cmd.master_write("hi", ack_en)
  */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_write(mrb_state *mrb, mrb_value self) {
-  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
   char *data;
   mrb_int data_len;
   mrb_bool ack_en;
   mrb_get_args(mrb, "sb", &data, &data_len, &ack_en);
-  return mrb_fixnum_value((mrb_int)i2c_master_write(*cmd_handle, (uint8_t *)data, (size_t)data_len, (bool)ack_en));
+
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  esp_err_t err = i2c_master_write(*cmd_handle, (uint8_t *)data, (size_t)data_len, (bool)ack_en);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv220i2c_master_read_byte16i2c_cmd_handle_tP7uint8_ti i2c_master_read_byte}
  *
- *     ret, data = cmd.master_read_byte(ESP32::I2C::MASTER_ACK)
+ *     data = cmd.master_read_byte(ESP32::I2C::MASTER_ACK)
  */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_read_byte(mrb_state *mrb, mrb_value self) {
-  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
-  mrb_value ary, s;
   mrb_int ack;
-  esp_err_t ret;
   mrb_get_args(mrb, "i", &ack);
-  s = mrb_str_new(mrb, NULL, 1);
-  ret = i2c_master_read_byte(*cmd_handle, RSTRING_PTR(s), (i2c_ack_type_t)ack);
-  ary = mrb_ary_new_capa(mrb, 2);
-  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
-  mrb_ary_set(mrb, ary, 1, s);
-  return ary;
+
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  mrb_value s = mrb_str_new(mrb, NULL, 1);
+  esp_err_t err = i2c_master_read_byte(*cmd_handle, RSTRING_PTR(s), (i2c_ack_type_t)ack);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return s;
 }
 
 /*
  * {http://esp-idf.readthedocs.io/en/v3.0-rc1/api-reference/peripherals/i2c.html#_CPPv215i2c_master_read16i2c_cmd_handle_tP7uint8_t6size_ti i2c_master_read}
  *
- *      ret, data = cmd.master_read(1234, ESP32::I2C::MASTER_ACK)
+ *      data = cmd.master_read(1234, ESP32::I2C::MASTER_ACK)
  */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_read(mrb_state *mrb, mrb_value self) {
-  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
-  mrb_value ary, s;
-  esp_err_t ret;
   mrb_int data_len, ack;
   mrb_get_args(mrb, "ii", &data_len, &ack);
-  s = mrb_str_new(mrb, NULL, data_len);
-  ret = i2c_master_read(*cmd_handle, (uint8_t *)RSTRING_PTR(s), (size_t)data_len, (i2c_ack_type_t)ack);
-  ary = mrb_ary_new_capa(mrb, 2);
-  mrb_ary_set(mrb, ary, 0, mrb_fixnum_value((mrb_int)ret));
-  mrb_ary_set(mrb, ary, 1, s);
-  return ary;
+
+  i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
+  mrb_value s = mrb_str_new(mrb, NULL, data_len);
+  esp_err_t err = i2c_master_read(*cmd_handle, (uint8_t *)RSTRING_PTR(s), (size_t)data_len, (i2c_ack_type_t)ack);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return s;
 }
 
 /*
@@ -724,7 +896,12 @@ static mrb_value mrb_esp32_i2c_cmd_handle_master_read(mrb_state *mrb, mrb_value 
  */
 static mrb_value mrb_esp32_i2c_cmd_handle_master_stop(mrb_state *mrb, mrb_value self) {
   i2c_cmd_handle_t *cmd_handle = (i2c_cmd_handle_t *)DATA_PTR(self);
-  return mrb_fixnum_value((mrb_int)i2c_master_stop(*cmd_handle));
+  esp_err_t err = i2c_master_stop(*cmd_handle);
+  if (err != ESP_OK) {
+    mrb_raise_esp32_err(mrb, err);
+  }
+
+  return mrb_nil_value();
 }
 
 /*
