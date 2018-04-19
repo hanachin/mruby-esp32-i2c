@@ -19,6 +19,8 @@
 #define MRUBY_ESP32_I2C_DEFAULT_SDA GPIO_NUM_21
 #define MRUBY_ESP32_I2C_DEFAULT_SCL GPIO_NUM_22
 
+#define MRUBY_ESP32_I2C_DEFAULT_TICKS_TO_WAIT 1000 / portTICK_RATE_MS
+
 typedef struct mrb_esp32_i2c {
   i2c_port_t i2c_num;
   i2c_mode_t mode;
@@ -762,7 +764,7 @@ void mrb_esp32_i2c_gem_init(mrb_state* mrb) {
   mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_FREQ", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_FREQ));
   mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_SDA", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_SDA));
   mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_SCL", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_SCL));
-  mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_TICKS_TO_WAIT", mrb_fixnum_value(1000 / portTICK_RATE_MS));
+  mrb_define_const(mrb, mrb_esp32_i2c, "DEFAULT_TICKS_TO_WAIT", mrb_fixnum_value(MRUBY_ESP32_I2C_DEFAULT_TICKS_TO_WAIT));
 
   /* ESP32::I2C::CmdHandle */
   mrb_esp32_i2c_cmd_handle = mrb_define_class_under(mrb, mrb_esp32_i2c, "CmdHandle", mrb-> object_class);
